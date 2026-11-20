@@ -16,11 +16,16 @@ jobs:
           gradle-version: 8.7
       - name: Build
         run: |
-          DIR=$(dirname "$(find . -name settings.gradle.kts -not -path './.git/*' | head -n1)")
-          echo "Project dir: $DIR"
-          cd "$DIR"
+          W=$PWD
+          mkdir -p /tmp/p
+          find . -name '*.zip' -not -path './.git/*' -print0 | while IFS= read -r -d '' z; do unzip -oq "$z" -d /tmp/p; done
+          S=$(find . /tmp/p -name settings.gradle.kts -not -path './.git/*' | head -n1)
+          if [ -z "$S" ]; then echo "NO PROJECT FOUND: upload roofwin zip"; ls -R . | head -50; exit 1; fi
+          cd "$(dirname "$S")"
           gradle assembleDebug
+          mkdir -p "$W/out"
+          find . -path '*outputs/apk/debug*' -name '*.apk' -exec cp {} "$W/out/" \;
       - uses: actions/upload-artifact@v4
         with:
           name: RoofWin-debug
-          path: "**/build/outputs/apk/debug/*.apk"
+          path: out/*.apk
