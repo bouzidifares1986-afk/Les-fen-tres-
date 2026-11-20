@@ -18,9 +18,10 @@ jobs:
         run: |
           W=$PWD
           mkdir -p /tmp/p
-          find . -name '*.zip' -not -path './.git/*' -print0 | while IFS= read -r -d '' z; do unzip -oq "$z" -d /tmp/p; done
-          S=$(find . /tmp/p -name settings.gradle.kts -not -path './.git/*' | head -n1)
-          if [ -z "$S" ]; then echo "NO PROJECT FOUND: upload roofwin zip"; ls -R . | head -50; exit 1; fi
+          find . -name '*.zip' -not -path './.git/*' -print0 | sort -z | while IFS= read -r -d '' z; do unzip -oq "$z" -d /tmp/p; done
+          S=$(find /tmp/p -name settings.gradle.kts | head -n1)
+          if [ -z "$S" ]; then S=$(find . -name settings.gradle.kts -not -path './.git/*' | head -n1); fi
+          if [ -z "$S" ]; then echo "NO PROJECT FOUND"; ls -R . | head -50; exit 1; fi
           cd "$(dirname "$S")"
           gradle assembleDebug
           mkdir -p "$W/out"
