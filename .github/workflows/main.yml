@@ -19,10 +19,15 @@ jobs:
           W=$PWD
           mkdir -p /tmp/p
           find . -name '*.zip' -not -path './.git/*' -print0 | sort -z | while IFS= read -r -d '' z; do unzip -oq "$z" -d /tmp/p; done
-          S=$(find /tmp/p -name settings.gradle.kts | head -n1)
-          if [ -z "$S" ]; then S=$(find . -name settings.gradle.kts -not -path './.git/*' | head -n1); fi
-          if [ -z "$S" ]; then echo "NO PROJECT FOUND"; ls -R . | head -50; exit 1; fi
-          cd "$(dirname "$S")"
+          S=$(find /tmp/p -path '*rwlights/settings.gradle.kts' | head -n1)
+          if [ -z "$S" ]; then echo "rwlights project not found"; exit 1; fi
+          P=$(dirname "$S")
+          G=$(find "$W" /tmp/p -not -path '*/.git/*' -type f -iname 'car.glb' 2>/dev/null | head -n1)
+          if [ -z "$G" ]; then G=$(find "$W" /tmp/p -not -path '*/.git/*' -type f -iname '*.glb' 2>/dev/null | head -n1); fi
+          if [ -z "$G" ]; then echo "GLB model not found: upload car.glb (or the .glb file) to the repo"; exit 1; fi
+          echo "Using model: $G"
+          cp "$G" "$P/app/src/main/assets/car.glb"
+          cd "$P"
           gradle assembleDebug
           mkdir -p "$W/out"
           find . -path '*outputs/apk/debug*' -name '*.apk' -exec cp {} "$W/out/" \;
@@ -30,3 +35,4 @@ jobs:
         with:
           name: RoofWin-debug
           path: out/*.apk
+          
